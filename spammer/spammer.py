@@ -1,5 +1,5 @@
 import asyncio
-from dataclasses import asdict
+import random
 
 from loguru import logger
 from playwright.async_api import async_playwright, Error
@@ -37,21 +37,23 @@ class TwitterSpammer:
 
         browser_data = await ADSPowerLocalAPI.open_browser(browser_id)
 
-        logger.info(asdict(browser_data))
+        while not browser_data.active:
+            browser_data = await ADSPowerLocalAPI.open_browser(browser_id)
+
+            if browser_data.active or spammer.stop_event.is_set():
+                break
+
+            await asyncio.sleep(random.randint(2, 6))
 
         if not browser_data.active:
             await log_field.write(f"Помилка при відкритті браузера {browser_id}")
-            logger.error(f"Browser is not active, can't start spamming. Browser data: {asdict(browser_data)}")
+            logger.error("Browser is not active, can't start spamming. Browser data: %s", browser_data.full_object)
             spammer.stop_event.set()
             return
 
         try:
             pl = await async_playwright().start()
-            browser = await pl.chromium.connect_over_cdp(
-                browser_data.ws_connection,
-                slow_mo=3000,
-                timeout=60000
-            )
+            browser = await pl.chromium.connect_over_cdp(browser_data.ws_connection, slow_mo=100, timeout=60000)
             default_context = browser.contexts[0]
             default_context.set_default_navigation_timeout(60000)
             page = default_context.pages[0]
@@ -83,11 +85,14 @@ class TwitterSpammer:
 
                 try:
                     await page.goto(group_url, wait_until="domcontentloaded")
-                    await page.mouse.dblclick(60, 60, delay=700)
-                    await page.wait_for_selector(Selectors.TEXT_FIELD)
+                    await asyncio.sleep(2)
+                    await page.mouse.click(60, 60)
+                    await asyncio.sleep(2)
+                    await page.wait_for_selector(Selectors.TEXT_FIELD, state="attached")
+                    await asyncio.sleep(2)
                     await page.set_input_files(Selectors.FILE_INPUT, gif_url)
+                    await asyncio.sleep(2)
                     await page.click(Selectors.SUBMIT_BUTTON)
-                    logger.info(f"Message sent to {group_url}")
                 except Error as e:
                     await log_field.write(f"{browser_id}({group_url}): Помилка при парсінгу сторінки")
                     logger.error(f"{browser_id}({group_url}): Помилка при парсінгу сторінки - {e}")
