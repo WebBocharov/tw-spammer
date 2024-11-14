@@ -1,9 +1,7 @@
-# A twitterspammer Flet app
-
-An example of a minimal Flet app.
+# A TW-Spammer app
 
 To run the app:
 
-```
-flet run [app_directory]
+```shell
+start.bat
 ```
