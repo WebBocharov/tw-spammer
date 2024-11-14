@@ -25,7 +25,7 @@ class TwitterSpammer:
     @logger.catch
     async def start(cls, browser_id: str, list_of_links: list[str], stop_event: asyncio.Event, log_field: LogField):
         if stop_event.is_set():
-            await log_field.write(f"Парсінг в браузері {browser_id} зупинено")
+            await log_field.write(f"{browser_id}: Парсінг зупинено")
             return
 
         spammer = cls(
@@ -40,7 +40,7 @@ class TwitterSpammer:
         logger.info(asdict(browser_data))
 
         if not browser_data.active:
-            await log_field.write(f"Помилка при відкритті браузера {browser_id}")
+            await log_field.write(f"{browser_id}: Браузер не активний, не можу отримати дані від ADS Power")
             logger.error(f"Browser is not active, can't start spamming. Browser data: {asdict(browser_data)}")
             spammer.stop_event.set()
             return
@@ -75,11 +75,11 @@ class TwitterSpammer:
                 gif_url = await get_random_gif()
                 if gif_url is None:
                     logger.error("No gifs found")
-                    await log_field.write(f"Не знайдено файлів в папці з медіа ({browser_id})")
+                    await log_field.write(f"{browser_id}({group_url}): Помилка при отриманні gif")
                     spammer.stop_event.set()
                     return
 
-                await log_field.write(f"Відбувається відправка в {browser_id} браузері в групу {group_url}")
+                await log_field.write(f"{browser_id}({group_url}): Початок відправлення повідомлення")
 
                 try:
                     await page.goto(group_url, wait_until="domcontentloaded")
@@ -87,7 +87,8 @@ class TwitterSpammer:
                     await page.wait_for_selector(Selectors.TEXT_FIELD)
                     await page.set_input_files(Selectors.FILE_INPUT, gif_url)
                     await page.click(Selectors.SUBMIT_BUTTON)
-                    logger.info(f"Message sent to {group_url}")
+                    await log_field.write(f"{browser_id}({group_url}): Повідомлення відправлено")
+                    logger.success(f"Message from {browser} sent to {group_url}")
                 except Error as e:
                     await log_field.write(f"{browser_id}({group_url}): Помилка при парсінгу сторінки")
                     logger.error(f"{browser_id}({group_url}): Помилка при парсінгу сторінки - {e}")
@@ -96,4 +97,4 @@ class TwitterSpammer:
                 if not spammer.stop_event.is_set():
                     await asyncio.sleep(config.SPAM_TIMEOUT * 30)
 
-        await log_field.write(f"Парсінг в браузері {browser_id} зупинено")
+        await log_field.write(f"{browser_id}: Парсінг зупинено")
