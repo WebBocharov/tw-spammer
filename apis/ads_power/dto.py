@@ -16,4 +16,5 @@ class BrowserProfileInfoDTO:
 class BrowserProfileConnectionDTO:
     active: bool
     ws_connection: str
+    msg: str = ""
     full_object: dict | str | bytes = None
