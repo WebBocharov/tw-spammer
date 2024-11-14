@@ -8,7 +8,7 @@ if exist venv/ (
     pip install -r requirements.txt
 
     echo "Starting the application"
-    python main.py
+    flet run
 ) else (
     echo "Installing a virtual environment"
     pip install virtualenv
@@ -23,7 +23,7 @@ if exist venv/ (
     pip install -r requirements.txt
 
     echo "Starting the application"
-    python main.py
+    flet run
 )
 
 pause
