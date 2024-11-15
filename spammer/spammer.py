@@ -2,10 +2,11 @@ import asyncio
 from dataclasses import asdict
 
 from loguru import logger
-from playwright.async_api import async_playwright, Error
+from playwright.async_api import async_playwright, Error, Response
 
 import config
 from apis import ADSPowerLocalAPI
+from apis.ads_power.dto import BrowserProfileConnectionDTO
 from app.components import LogField
 from utils import get_random_gif
 from .selectors import Selectors
@@ -83,12 +84,19 @@ class TwitterSpammer:
 
                 try:
                     await page.goto(group_url, wait_until="domcontentloaded")
+
+                    if 'account/access' in page.url:
+                        await log_field.write(f"{browser_id}({group_url}): Помилка доступу до сторінки")
+                        logger.error(f"Access error to {group_url}")
+                        spammer.stop_event.set()
+                        return
+
                     await page.mouse.dblclick(60, 60, delay=700)
-                    await page.wait_for_selector(Selectors.TEXT_FIELD)
+                    # await page.wait_for_selector(Selectors.TEXT_FIELD)
                     await page.set_input_files(Selectors.FILE_INPUT, gif_url)
                     await page.click(Selectors.SUBMIT_BUTTON)
                     await log_field.write(f"{browser_id}({group_url}): Повідомлення відправлено")
-                    logger.success(f"Message from {browser} sent to {group_url}")
+                    logger.success(f"Message from {browser_id} sent to {group_url}")
                 except Error as e:
                     await log_field.write(f"{browser_id}({group_url}): Помилка при парсінгу сторінки")
                     logger.error(f"{browser_id}({group_url}): Помилка при парсінгу сторінки - {e}")
@@ -98,3 +106,26 @@ class TwitterSpammer:
                     await asyncio.sleep(config.SPAM_TIMEOUT * 30)
 
         await log_field.write(f"{browser_id}: Парсінг зупинено")
+
+    @staticmethod
+    async def get_data_for_request(browser_data: BrowserProfileConnectionDTO):
+        pl = await async_playwright().start()
+        browser = await pl.chromium.connect_over_cdp(browser_data.ws_connection, timeout=60000)
+        default_context = browser.contexts[0]
+        default_context.set_default_navigation_timeout(60000)
+        page = default_context.pages[0]
+        await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+        page.on("response", TwitterSpammer.response_handler)
+
+        await page.goto("https://x.com/messages")
+
+    @staticmethod
+    async def response_handler(response: Response):
+        if response.url == "https://x.com/account/access":
+            logger.error("Access error")
+            return
+
+        if response.request.resource_type in ['xhr', 'fetch']:
+            if "inbox_initial_state.json" in response.request.url:
+                logger.success("Data for request saved")
