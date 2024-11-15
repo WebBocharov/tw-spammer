@@ -13,71 +13,62 @@ from .selectors import Selectors
 
 
 class TwitterSpammer:
-    __slots__ = ("browser_id", "list_of_links", "stop_event", "log_field")
-
-    def __init__(self, browser_id: str, list_of_links: list[str], *, stop_event: asyncio.Event,
-                 log_field: LogField):
-        self.browser_id = browser_id
-        self.list_of_links = list_of_links
-        self.stop_event = stop_event
-        self.log_field = log_field
+    @staticmethod
+    @logger.catch
+    async def _init_playwright(browser_data: BrowserProfileConnectionDTO, *, slow_mo: int = 3000,
+                               timeout: int = 60000):
+        pl = await async_playwright().start()
+        browser = await pl.chromium.connect_over_cdp(
+            browser_data.ws_connection,
+            slow_mo=slow_mo,
+            timeout=timeout
+        )
+        default_context = browser.contexts[0]
+        default_context.set_default_navigation_timeout(timeout)
+        page = default_context.pages[0]
+        await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        return page, default_context
 
     @classmethod
     @logger.catch
     async def start(cls, browser_id: str, list_of_links: list[str], stop_event: asyncio.Event, log_field: LogField):
+        spammer = cls()
+
         if stop_event.is_set():
             await log_field.write(f"{browser_id}: Парсінг зупинено")
             return
 
-        spammer = cls(
-            browser_id,
-            list_of_links,
-            stop_event=stop_event,
-            log_field=log_field
-        )
-
         browser_data = await ADSPowerLocalAPI.open_browser(browser_id)
-
-        logger.info(asdict(browser_data))
 
         if not browser_data.active:
             await log_field.write(f"{browser_id}: Браузер не активний, не можу отримати дані від ADS Power")
             logger.error(f"Browser is not active, can't start spamming. Browser data: {asdict(browser_data)}")
-            spammer.stop_event.set()
+            stop_event.set()
             return
 
         try:
-            pl = await async_playwright().start()
-            browser = await pl.chromium.connect_over_cdp(
-                browser_data.ws_connection,
-                slow_mo=3000,
-                timeout=60000
-            )
-            default_context = browser.contexts[0]
-            default_context.set_default_navigation_timeout(60000)
-            page = default_context.pages[0]
-            await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            page, context = await spammer._init_playwright(browser_data)
         except Error as playwright_error:
             await log_field.write(f"{browser_id}: Помилка при створення парсера")
             logger.error(f"{browser_id}: Помилка при створення парсера - {playwright_error}")
-            spammer.stop_event.set()
+            stop_event.set()
             return
         except Exception as error:
             await log_field.write(f"{browser_id}: Невідома помилка при створенні парсера")
             logger.error(f"{browser_id}: Невідома помилка при створенні парсера - {error}")
-            spammer.stop_event.set()
+            stop_event.set()
             return
 
-        while not spammer.stop_event.is_set():
-            for group_url in spammer.list_of_links:
-                if spammer.stop_event.is_set():
+        while not stop_event.is_set():
+            for group_url in list_of_links:
+                if stop_event.is_set():
                     break
 
                 gif_url = await get_random_gif()
                 if gif_url is None:
                     logger.error("No gifs found")
                     await log_field.write(f"{browser_id}({group_url}): Помилка при отриманні gif")
-                    spammer.stop_event.set()
+                    stop_event.set()
                     return
 
                 await log_field.write(f"{browser_id}({group_url}): Початок відправлення повідомлення")
@@ -86,45 +77,37 @@ class TwitterSpammer:
                     await page.goto(group_url, wait_until="domcontentloaded")
 
                     if 'account/access' in page.url:
-                        await log_field.write(f"{browser_id}({group_url}): Помилка доступу до сторінки")
-                        logger.error(f"Access error to {group_url}")
-                        spammer.stop_event.set()
+                        await log_field.write(f"{browser_id}({group_url}): Помилка доступу до сторінки. Captcha.")
+                        logger.error(f"{browser_id}({group_url}): Access error. Captcha.")
+                        stop_event.set()
                         return
 
-                    await page.mouse.dblclick(60, 60, delay=700)
-                    # await page.wait_for_selector(Selectors.TEXT_FIELD)
+                    await page.fill(Selectors.TEXT_FIELD, config.DEFAULT_TEXT)
                     await page.set_input_files(Selectors.FILE_INPUT, gif_url)
                     await page.click(Selectors.SUBMIT_BUTTON)
                     await log_field.write(f"{browser_id}({group_url}): Повідомлення відправлено")
                     logger.success(f"Message from {browser_id} sent to {group_url}")
                 except Error as e:
                     await log_field.write(f"{browser_id}({group_url}): Помилка при парсінгу сторінки")
-                    logger.error(f"{browser_id}({group_url}): Помилка при парсінгу сторінки - {e}")
+                    logger.error(f"{browser_id}({group_url}): Помилка при парсінгу сторінки - {e.message}")
                     continue
 
-                if not spammer.stop_event.is_set():
+                if not stop_event.is_set():
                     await asyncio.sleep(config.SPAM_TIMEOUT * 30)
 
         await log_field.write(f"{browser_id}: Парсінг зупинено")
 
-    @staticmethod
-    async def get_data_for_request(browser_data: BrowserProfileConnectionDTO):
-        pl = await async_playwright().start()
-        browser = await pl.chromium.connect_over_cdp(browser_data.ws_connection, timeout=60000)
-        default_context = browser.contexts[0]
-        default_context.set_default_navigation_timeout(60000)
-        page = default_context.pages[0]
-        await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
+    @classmethod
+    async def get_data_for_request(cls, browser_data: BrowserProfileConnectionDTO):
+        spammer = cls()
+        page, _ = await spammer._init_playwright(browser_data)
         page.on("response", TwitterSpammer.response_handler)
-
-        await page.goto("https://x.com/messages")
+        await page.goto("https://x.com/messages", wait_until="domcontentloaded")
 
     @staticmethod
     async def response_handler(response: Response):
         if response.url == "https://x.com/account/access":
             logger.error("Access error")
-            return
 
         if response.request.resource_type in ['xhr', 'fetch']:
             if "inbox_initial_state.json" in response.request.url:
