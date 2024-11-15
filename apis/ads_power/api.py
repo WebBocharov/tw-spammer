@@ -87,7 +87,7 @@ class ADSPowerLocalAPI:
         else:
             logger.info(f"Browser {browser_id} is inactive. Starting...")
             async with aiohttp.ClientSession() as session:
-                async with session.get(cls.OPEN_BROWSER_URL.format(browser_id=browser_id, headless=1)) as response:
+                async with session.get(cls.OPEN_BROWSER_URL.format(browser_id=browser_id, headless=config.HEADLESS_MODE)) as response:
                     if response.status != 200:
                         logger.error(f"Error while starting browser: {await response.text()}")
                         return BrowserProfileConnectionDTO(

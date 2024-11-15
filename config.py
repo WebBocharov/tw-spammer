@@ -7,6 +7,13 @@ ADS_POWER_API_URL = "http://localhost:50325"
 
 MEDIA_FOLDER = BASE_DIR / "media"
 SPAM_TIMEOUT = 1  # minutes in code will be multiplied by 60
+HEADLESS_MODE = 1
+
+DEFAULT_TEXT = """🔥 HIT MY PIN
+
+⛔️ Don’t SKIP ⛔️
+
+❗️ I CHECK ❗️"""
 
 if not os.path.exists(MEDIA_FOLDER):
     os.mkdir(MEDIA_FOLDER)
