@@ -42,7 +42,7 @@ class ADSPowerLocalAPI:
         backoff.constant,
         lambda func_response: func_response.msg in ["Too many request per second, please check"],
         jitter=None,
-        interval=10,
+        interval=5,
         on_backoff=lambda details: logger.warning(f"Too many requests per second, waiting for {details['wait']} seconds"),
         on_success=lambda details: logger.info(f"Browser status received"),
     )
@@ -74,7 +74,7 @@ class ADSPowerLocalAPI:
         backoff.constant,
         lambda func_response: func_response.msg in ["Too many request per second, please check"],
         jitter=None,
-        interval=10,
+        interval=5,
         on_backoff=lambda details: logger.warning(f"Too many requests per second, waiting for {details['wait']} seconds"),
         on_success=lambda details: logger.info(f"Browser opened successfully"),
     )
