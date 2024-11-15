@@ -41,7 +41,8 @@ class ADSPowerLocalAPI:
     @backoff.on_predicate(
         backoff.constant,
         lambda func_response: func_response.msg in ["Too many request per second, please check"],
-        interval=30,
+        jitter=None,
+        interval=10,
         on_backoff=lambda details: logger.warning(f"Too many requests per second, waiting for {details['wait']} seconds"),
         on_success=lambda details: logger.info(f"Browser status received"),
     )
@@ -72,7 +73,8 @@ class ADSPowerLocalAPI:
     @backoff.on_predicate(
         backoff.constant,
         lambda func_response: func_response.msg in ["Too many request per second, please check"],
-        interval=30,
+        jitter=None,
+        interval=10,
         on_backoff=lambda details: logger.warning(f"Too many requests per second, waiting for {details['wait']} seconds"),
         on_success=lambda details: logger.info(f"Browser opened successfully"),
     )
