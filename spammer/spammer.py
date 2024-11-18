@@ -1,4 +1,5 @@
 import asyncio
+import json
 from dataclasses import asdict
 
 from loguru import logger
@@ -8,15 +9,17 @@ import config
 from apis import ADSPowerLocalAPI
 from apis.ads_power.dto import BrowserProfileConnectionDTO
 from app.components import LogField
-from database.controllers import ConfigController
+from database.controllers import BrowserProfileController, ConfigController, TwitterGroupUrlController
 from utils import get_random_gif
 from .selectors import Selectors
 
 
 class TwitterSpammer:
-    @staticmethod
+    def __init__(self, browser_id: str | None = None):
+        self.browser_id = browser_id
+
     @logger.catch
-    async def _init_playwright(browser_data: BrowserProfileConnectionDTO, *, slow_mo: int = 3000,
+    async def _init_playwright(self, browser_data: BrowserProfileConnectionDTO, *, slow_mo: int = 3000,
                                timeout: int = 60000):
         pl = await async_playwright().start()
         browser = await pl.chromium.connect_over_cdp(
@@ -99,17 +102,22 @@ class TwitterSpammer:
         await log_field.write(f"{browser_id}: Парсінг зупинено")
 
     @classmethod
-    async def get_data_for_request(cls, browser_data: BrowserProfileConnectionDTO):
-        spammer = cls()
-        page, _ = await spammer._init_playwright(browser_data)
-        page.on("response", TwitterSpammer.response_handler)
+    async def get_data_for_request(cls, browser_data: BrowserProfileConnectionDTO, browser_id: str):
+        self = cls(browser_id)
+        page, _ = await self._init_playwright(browser_data)
+        page.on("response", self.response_handler)
         await page.goto("https://x.com/messages", wait_until="domcontentloaded")
 
-    @staticmethod
-    async def response_handler(response: Response):
+    async def response_handler(self, response: Response):
         if response.url == "https://x.com/account/access":
-            logger.error("Access error")
+            logger.error("Access error. Captcha.")
 
         if response.request.resource_type in ['xhr', 'fetch']:
             if "inbox_initial_state.json" in response.request.url:
-                logger.success("Data for request saved")
+                data = await response.json()
+                conversations = []
+                for key, value in data.get("inbox_initial_state", {}).get("conversations").items():
+                    if value.get("trusted"):
+                        conversations.append(f"https://x.com/messages/{key}")
+
+                await TwitterGroupUrlController.batch_create_by_browser_id(conversations, self.browser_id)

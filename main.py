@@ -8,7 +8,7 @@ from apis import ADSPowerLocalAPI
 from app.components import BrowsersListView, LogField, SearchField
 from app.components.buttons import StartSpamButton, StopSpamButton
 from app.components.modals import SetSpamTimeoutModal
-from app.events import start_spam_callback, stop_spam_callback
+from app.events import start_spam_callback, stop_spam_callback, update_groups_urls_callback
 from database.controllers import BrowserProfileController, ConfigController
 
 from database.init import init_orm
@@ -61,7 +61,7 @@ async def main(page: ft.Page):
         actions=[
             ft.PopupMenuButton(items=[
                 ft.PopupMenuItem(text="Установити timeout спаму", on_click=lambda _: page.open(SetSpamTimeoutModal())),
-                # ft.PopupMenuItem(text="Обновити список посилань на групи", on_click=update_groups_urls_callback),
+                ft.PopupMenuItem(text="Обновити список посилань на групи", on_click=update_groups_urls_callback),
                 ft.PopupMenuItem(text="Оновити список браузерів", on_click=update_browser_list),
             ]),
         ],
