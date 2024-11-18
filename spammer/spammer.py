@@ -117,7 +117,7 @@ class TwitterSpammer:
                 data = await response.json()
                 conversations = []
                 for key, value in data.get("inbox_initial_state", {}).get("conversations").items():
-                    if value.get("trusted"):
+                    if value.get("trusted") and len(value.get("participants")) >= 50:
                         conversations.append(f"https://x.com/messages/{key}")
 
                 await TwitterGroupUrlController.batch_create_by_browser_id(conversations, self.browser_id)
