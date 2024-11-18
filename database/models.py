@@ -31,3 +31,11 @@ class TwitterGroupUrl(BaseModel):
 
     class Meta:
         app = "models"
+
+
+class Config(BaseModel):
+    name = fields.CharField(max_length=50)
+    value = fields.TextField()
+
+    class Meta:
+        app = "models"

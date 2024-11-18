@@ -12,6 +12,10 @@ class BrowserProfileController:
         return await BrowserProfile.get_or_create(**asdict(browser))
 
     @staticmethod
+    async def get_amount_twitter_group_urls_by_browser_id(browser_id: str) -> int:
+        return await BrowserProfile.filter(id=browser_id).first().twitter_group_urls.count()
+
+    @staticmethod
     async def delete_browser_profile_by_filer(filter_by: str, value: list[str]):
         await BrowserProfile.filter(**{filter_by: value}).delete()
 
@@ -27,6 +31,10 @@ class BrowserProfileController:
     @staticmethod
     async def get_browser_profiles() -> list[BrowserProfile]:
         return await BrowserProfile.all().prefetch_related('twitter_group_urls')
+
+    @staticmethod
+    async def get_browser_profile_by_id(browser_id: str) -> BrowserProfile:
+        return await BrowserProfile.filter(browser_id=browser_id).first()
 
     @staticmethod
     async def filter_browser_profiles(field_filter_by: str, value: str) -> list[BrowserProfile]:
