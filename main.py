@@ -17,9 +17,11 @@ from app.events.filter import filter_browser
 logger.add(
     "logs/{time:%d.%m.%Y}.log",
     rotation="1 day",
-    retention="1 minute",
+    retention="1 week",
+    compression="zip",
     diagnose=True,
-    enqueue=True
+    enqueue=True,
+    backtrace=True,
 )
 
 

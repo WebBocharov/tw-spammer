@@ -121,3 +121,4 @@ class TwitterSpammer:
                         conversations.append(f"https://x.com/messages/{key}")
 
                 await TwitterGroupUrlController.batch_create_by_browser_id(conversations, self.browser_id)
+                logger.success(f"Got {len(conversations)} group urls for browser: {self.browser_id}")

@@ -1,4 +1,5 @@
 import flet as ft
+from loguru import logger
 
 from apis import ADSPowerLocalAPI
 from database.controllers import BrowserProfileController
@@ -11,4 +12,5 @@ async def update_groups_urls_callback(event: ft.ControlEvent):
 
     for browser in browsers:
         browser_connection_data = await ADSPowerLocalAPI.open_browser(browser.browser_id)
+        logger.info(f"Getting groups urls for browser: {browser.browser_id}")
         await TwitterSpammer.get_data_for_request(browser_connection_data, browser.browser_id)
