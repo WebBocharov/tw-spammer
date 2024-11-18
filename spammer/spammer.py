@@ -1,5 +1,4 @@
 import asyncio
-import json
 from dataclasses import asdict
 
 from loguru import logger
@@ -9,7 +8,7 @@ import config
 from apis import ADSPowerLocalAPI
 from apis.ads_power.dto import BrowserProfileConnectionDTO
 from app.components import LogField
-from database.controllers import BrowserProfileController, ConfigController, TwitterGroupUrlController
+from database.controllers import ConfigController, TwitterGroupUrlController
 from utils import get_random_gif
 from .selectors import Selectors
 
