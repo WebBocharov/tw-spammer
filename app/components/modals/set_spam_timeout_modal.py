@@ -1,7 +1,9 @@
+import asyncio
+
 import flet as ft
 from loguru import logger
 
-import config
+from database.controllers import ConfigController
 
 
 class SetSpamTimeoutModal(ft.AlertDialog):
@@ -10,10 +12,11 @@ class SetSpamTimeoutModal(ft.AlertDialog):
         self.modal = True
         self.title = ft.Text(f"Встановлення таймауту спаму")
         self.content = ft.TextField(
-            value=config.SPAM_TIMEOUT,
+            value=asyncio.run(ConfigController.get_by_name("SPAM_TIMEOUT")).value,
             label="Введіть таймаут",
             hint_text="1 = 30 секунд",
             expand=True,
+            prefix=ft.Text("30 секунд * "),
             input_filter=ft.NumbersOnlyInputFilter(),
         )
         self.expand = True
@@ -24,6 +27,6 @@ class SetSpamTimeoutModal(ft.AlertDialog):
 
     async def save_timeout(self, _: ft.ControlEvent):
         if int(self.content.value) > 0:
-            config.SPAM_TIMEOUT = int(self.content.value)
-            logger.info(f"Timeout set to {config.SPAM_TIMEOUT} minutes")
+            await ConfigController.create_or_update("SPAM_TIMEOUT", int(self.content.value))
+            logger.info(f"Timeout set to {(await ConfigController.get_by_name("SPAM_TIMEOUT")).value} minutes")
             self.page.close(self)

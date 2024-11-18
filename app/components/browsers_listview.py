@@ -10,7 +10,7 @@ from .browser_list_tile import BrowserListTile
 class BrowsersListView(ft.ListView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.width = 400
+        self.width = 450
         self.height = 400
         self.spacing = 5
         self.expand = True
