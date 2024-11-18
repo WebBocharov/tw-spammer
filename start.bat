@@ -7,6 +7,10 @@ if exist venv/ (
     echo "Installing dependencies"
     pip install -r requirements.txt
 
+    echo "Migration the database"
+    aerich migrate
+    aerich upgrade
+
     echo "Starting the application"
     flet run
 ) else (
@@ -21,6 +25,11 @@ if exist venv/ (
 
     echo "Installing dependencies"
     pip install -r requirements.txt
+
+    echo "Migration the database"
+    aerich init -t database.init.TORTOISE_ORM
+    aerich migrate
+    aerich upgrade
 
     echo "Starting the application"
     flet run
