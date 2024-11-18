@@ -94,7 +94,7 @@ class TwitterSpammer:
                     continue
 
                 if not stop_event.is_set():
-                    await asyncio.sleep((await ConfigController.get_by_name("SPAM_TIMEOUT")).value * 30)
+                    await asyncio.sleep(int((await ConfigController.get_by_name("SPAM_TIMEOUT")).value) * 30)
 
         await log_field.write(f"{browser_id}: Парсінг зупинено")
 
