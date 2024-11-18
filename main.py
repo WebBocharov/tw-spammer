@@ -8,8 +8,8 @@ from apis import ADSPowerLocalAPI
 from app.components import BrowsersListView, LogField, SearchField
 from app.components.buttons import StartSpamButton, StopSpamButton
 from app.components.modals import SetSpamTimeoutModal
-from app.events import start_spam_callback, stop_spam_callback
-from database.controllers import BrowserProfileController
+from app.events import start_spam_callback, stop_spam_callback, update_groups_urls_callback
+from database.controllers import BrowserProfileController, ConfigController
 
 from database.init import init_orm
 from app.events.filter import filter_browser
@@ -28,6 +28,7 @@ async def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
 
     await init_orm()
+    await ConfigController.create("SPAM_TIMEOUT", 2)  # 1 minute
     browsers_list_view = BrowsersListView()
     await browsers_list_view.set_controls(await BrowserProfileController.get_browser_profiles())
 
@@ -46,7 +47,9 @@ async def main(page: ft.Page):
 
         if updated_browser_list:
             await BrowserProfileController.batch_create(updated_browser_list)
-            await BrowserProfileController.delete_browser_profile_by_filer("browser_id__not_in", [browser.browser_id for browser in updated_browser_list])
+            await BrowserProfileController.delete_browser_profile_by_filer("browser_id__not_in",
+                                                                           [browser.browser_id for browser in
+                                                                            updated_browser_list])
 
         list_view = await browsers_list_view.set_controls(await BrowserProfileController.get_browser_profiles())
         list_view.update()
@@ -58,6 +61,7 @@ async def main(page: ft.Page):
         actions=[
             ft.PopupMenuButton(items=[
                 ft.PopupMenuItem(text="Установити timeout спаму", on_click=lambda _: page.open(SetSpamTimeoutModal())),
+                ft.PopupMenuItem(text="Обновити список посилань на групи", on_click=update_groups_urls_callback),
                 ft.PopupMenuItem(text="Оновити список браузерів", on_click=update_browser_list),
             ]),
         ],
@@ -66,7 +70,7 @@ async def main(page: ft.Page):
     filter_by_dropdown = ft.Dropdown(
         value="name",
         label="Filter",
-        width=170,
+        width=220,
         border_color=ft.colors.WHITE,
         options=[
             ft.dropdown.Option("name", "By name"),
@@ -103,7 +107,6 @@ async def main(page: ft.Page):
                 ],
             ),
             expand=True,
-            # bgcolor=ft.colors.BLUE_700,
         ),
         ft.Container(
             content=ft.Column(
@@ -112,7 +115,6 @@ async def main(page: ft.Page):
                         content=ft.Row(
                             controls=[
                                 ft.Container(
-                                    # bgcolor=ft.colors.RED,
                                     content=StartSpamButton(
                                         lambda _: start_spam_callback(
                                             _,
@@ -125,7 +127,6 @@ async def main(page: ft.Page):
                                     alignment=ft.alignment.center,
                                 ),
                                 ft.Container(
-                                    # bgcolor=ft.colors.BLUE,
                                     content=StopSpamButton(
                                         lambda _: stop_spam_callback(
                                             _,
@@ -140,7 +141,6 @@ async def main(page: ft.Page):
                             alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         alignment=ft.alignment.bottom_center,
-                        # bgcolor=ft.colors.GREEN,
                     )
                 ]
             )
