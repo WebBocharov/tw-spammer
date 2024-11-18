@@ -8,6 +8,7 @@ import config
 from apis import ADSPowerLocalAPI
 from apis.ads_power.dto import BrowserProfileConnectionDTO
 from app.components import LogField
+from database.controllers import ConfigController
 from utils import get_random_gif
 from .selectors import Selectors
 
@@ -93,7 +94,7 @@ class TwitterSpammer:
                     continue
 
                 if not stop_event.is_set():
-                    await asyncio.sleep(config.SPAM_TIMEOUT * 30)
+                    await asyncio.sleep((await ConfigController.get_by_name("SPAM_TIMEOUT")).value * 30)
 
         await log_field.write(f"{browser_id}: Парсінг зупинено")
 
