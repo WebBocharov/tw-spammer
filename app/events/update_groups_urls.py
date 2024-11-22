@@ -8,7 +8,7 @@ from apis import ADSPowerLocalAPI
 from database.controllers import BrowserProfileController, TwitterGroupUrlController
 from spammer import TwitterSpammer
 
-
+@logger.catch
 async def update_groups_urls_callback(event: ft.ControlEvent):
     browsers = await BrowserProfileController.get_browser_profiles()
 
@@ -18,6 +18,7 @@ async def update_groups_urls_callback(event: ft.ControlEvent):
         asyncio.create_task(parse_groups(browser_connection_data, browser.browser_id))
 
 
+@logger.catch
 async def parse_groups(browser_connection, browser_id):
     logger.info(f"Getting page source for browser {browser_id}")
     page_source = await TwitterSpammer.get_page_source(browser_connection)
