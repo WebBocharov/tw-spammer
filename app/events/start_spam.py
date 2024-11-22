@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime
 
 import flet as ft
 from loguru import logger
