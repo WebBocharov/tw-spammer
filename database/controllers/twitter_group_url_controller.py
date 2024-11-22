@@ -14,9 +14,12 @@ class TwitterGroupUrlController:
             )
 
     @staticmethod
-    async def batch_create_by_browser_id(group_urls: list[str], browser_id):
+    @logger.catch
+    async def batch_create_by_browser_id(group_urls: list[str] | set[str], browser_id):
+        browser_profile = await BrowserProfileController.get_browser_profile_by_id(browser_id)
+        await TwitterGroupUrl.filter(browser_profile=browser_profile).delete()
         for group_url in group_urls:
             await TwitterGroupUrl.get_or_create(
                 url=group_url,
-                browser_profile=await BrowserProfileController.get_browser_profile_by_id(browser_id)
+                browser_profile=browser_profile
             )
