@@ -29,7 +29,9 @@ class BrowserProfileController:
         await BrowserProfile.filter(browser_id=browser_id).delete()
 
     @staticmethod
-    async def get_browser_profiles() -> list[BrowserProfile]:
+    async def get_browser_profiles(filters: dict = None) -> list[BrowserProfile]:
+        if filters:
+            return await BrowserProfile.filter(**filters).all().prefetch_related('twitter_group_urls')
         return await BrowserProfile.all().prefetch_related('twitter_group_urls')
 
     @staticmethod
