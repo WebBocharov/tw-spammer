@@ -32,11 +32,12 @@ async def parse_groups(browser_connection, browser_id):
         conv_url = conversation.find_next(
             'a',
             {'data-testid': 'DM_Conversation_Avatar', 'role': 'link'}
-        ).get('href')
+        )
         logger.info(f"Getting conversation url {conv_url}")
+        logger.info(f"Getting conversation url {conv_url.get('href')}")
 
         if conv_url is not None:
-            conversation_urls.append(f"https://x.com/messages/{conv_url.split('/')[2]}")
+            conversation_urls.append(f"https://x.com/messages/{conv_url.get('href').split('/')[2]}")
         else:
             logger.info(f"Conversation url is None - {conv_url}")
 

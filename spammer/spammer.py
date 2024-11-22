@@ -1,4 +1,5 @@
 import asyncio
+import random
 from dataclasses import asdict
 
 from loguru import logger
@@ -105,6 +106,6 @@ class TwitterSpammer:
         self = cls()
         page, _ = await self._init_playwright(browser_data)
         await page.goto("https://x.com/messages", wait_until="domcontentloaded")
-        await page.wait_for_selector(Selectors.CHAT_LIST, state="visible", timeout=40000)
-        await page.wait_for_timeout(5000)
+        await page.wait_for_selector(Selectors.CHAT_LIST, state="visible", timeout=60000)
+        await page.wait_for_timeout(random.randint(10000, 20000))
         return await page.content()
