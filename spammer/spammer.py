@@ -101,23 +101,10 @@ class TwitterSpammer:
         await log_field.write(f"{browser_id}: Парсінг зупинено")
 
     @classmethod
-    async def get_data_for_request(cls, browser_data: BrowserProfileConnectionDTO, browser_id: str):
-        self = cls(browser_id)
+    async def get_page_source(cls, browser_data: BrowserProfileConnectionDTO):
+        self = cls()
         page, _ = await self._init_playwright(browser_data)
-        page.on("response", self.response_handler)
         await page.goto("https://x.com/messages", wait_until="domcontentloaded")
-
-    async def response_handler(self, response: Response):
-        if response.url == "https://x.com/account/access":
-            logger.error("Access error. Captcha.")
-
-        if response.request.resource_type in ['xhr', 'fetch']:
-            if "inbox_initial_state.json" in response.request.url:
-                data = await response.json()
-                conversations = []
-                for key, value in data.get("inbox_initial_state", {}).get("conversations").items():
-                    if value.get("trusted") and len(value.get("participants")) >= 50:
-                        conversations.append(f"https://x.com/messages/{key}")
-
-                await TwitterGroupUrlController.batch_create_by_browser_id(conversations, self.browser_id)
-                logger.success(f"Got {len(conversations)} group urls for browser: {self.browser_id}")
+        await page.wait_for_selector(Selectors.CHAT_LIST, state="visible", timeout=40000)
+        await page.wait_for_timeout(5000)
+        return await page.content()
