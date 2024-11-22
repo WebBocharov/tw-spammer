@@ -21,7 +21,7 @@ logger.add(
     compression="zip",
     diagnose=True,
     enqueue=True,
-    backtrace=True,
+    backtrace=True
 )
 
 
@@ -49,9 +49,10 @@ async def main(page: ft.Page):
 
         if updated_browser_list:
             await BrowserProfileController.batch_create(updated_browser_list)
-            await BrowserProfileController.delete_browser_profile_by_filer("browser_id__not_in",
-                                                                           [browser.browser_id for browser in
-                                                                            updated_browser_list])
+            await BrowserProfileController.delete_browser_profile_by_filer(
+                "browser_id__not_in",
+                [browser.browser_id for browser in updated_browser_list]
+            )
 
         list_view = await browsers_list_view.set_controls(await BrowserProfileController.get_browser_profiles())
         list_view.update()
