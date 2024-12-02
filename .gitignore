@@ -8,6 +8,8 @@ main.db-shm
 main.db-wal
 logs/
 media/
+sessions/
+migrations/
 *.zip
 .idea
 .DS_Store
