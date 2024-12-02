@@ -5,10 +5,10 @@ from flet_core.types import AppView
 from loguru import logger
 
 from apis import ADSPowerLocalAPI
-from app.components import BrowsersListView, LogField, SearchField
+from app.components import BrowsersListView, LogField, SearchField, UpdateLinksPopUpMenu
 from app.components.buttons import StartSpamButton, StopSpamButton
 from app.components.modals import SetSpamTimeoutModal
-from app.events import start_spam_callback, stop_spam_callback, update_groups_urls_callback
+from app.events import start_spam_callback, stop_spam_callback
 from database.controllers import BrowserProfileController, ConfigController
 
 from database.init import init_orm
@@ -34,13 +34,6 @@ async def main(page: ft.Page):
     browsers_list_view = BrowsersListView()
     await browsers_list_view.set_controls(await BrowserProfileController.get_browser_profiles())
 
-    async def on_keyboard(e: ft.KeyboardEvent):
-        if e.key == "S" and e.ctrl:
-            page.show_semantics_debugger = not page.show_semantics_debugger
-            page.update()
-
-    page.on_keyboard_event = on_keyboard
-
     tasks = {}
     stop_events = {}
 
@@ -57,6 +50,8 @@ async def main(page: ft.Page):
         list_view = await browsers_list_view.set_controls(await BrowserProfileController.get_browser_profiles())
         list_view.update()
 
+    logs_text_field = LogField()
+
     page.appbar = ft.AppBar(
         title=ft.Text("Twitter Spammer"),
         center_title=False,
@@ -64,7 +59,7 @@ async def main(page: ft.Page):
         actions=[
             ft.PopupMenuButton(items=[
                 ft.PopupMenuItem(text="Установити timeout спаму", on_click=lambda _: page.open(SetSpamTimeoutModal())),
-                ft.PopupMenuItem(text="Обновити список посилань на групи", on_click=update_groups_urls_callback),
+                UpdateLinksPopUpMenu(logs_text_field),
                 ft.PopupMenuItem(text="Оновити список браузерів", on_click=update_browser_list),
             ]),
         ],
@@ -90,7 +85,6 @@ async def main(page: ft.Page):
         width=220,
         border_color=ft.colors.WHITE
     )
-    logs_text_field = LogField()
 
     page.add(
         ft.Container(
