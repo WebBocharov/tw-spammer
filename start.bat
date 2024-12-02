@@ -28,6 +28,7 @@ if exist venv/ (
 
     echo "Migration the database"
     aerich init -t database.init.TORTOISE_ORM
+    aerich init-db
     aerich migrate
     aerich upgrade
 
