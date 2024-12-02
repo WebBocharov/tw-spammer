@@ -1,19 +1,11 @@
 import re
-import uuid
 
 from tortoise import fields
-from tortoise.models import Model
 from tweety import constants
 from tweety.types import Proxy
 
 import config
-
-
-class BaseModel(Model):
-    id = fields.UUIDField(primary_key=True, default=uuid.uuid4)
-
-    class Meta:
-        abstract = True
+from .base import BaseModel
 
 
 class BrowserProfile(BaseModel):
@@ -37,26 +29,6 @@ class BrowserProfile(BaseModel):
             username=proxy_regex.group(4),
             password=proxy_regex.group(5)
         )
-
-    class Meta:
-        app = "models"
-
-
-class TwitterGroupUrl(BaseModel):
-    url = fields.TextField()
-    browser_profile = fields.ForeignKeyField(
-        "models.BrowserProfile",
-        related_name="twitter_group_urls",
-        null=False
-    )
-
-    class Meta:
-        app = "models"
-
-
-class Config(BaseModel):
-    name = fields.CharField(max_length=50)
-    value = fields.TextField()
 
     class Meta:
         app = "models"

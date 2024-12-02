@@ -1,7 +1,6 @@
 import re
 
 import flet as ft
-from loguru import logger
 
 import config
 from database.controllers import BrowserProfileController, TwitterGroupUrlController

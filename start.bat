@@ -7,6 +7,9 @@ if exist venv/ (
     echo "Installing dependencies"
     pip install -r requirements.txt
 
+    echo "Installing magiclib"
+    pip install python-magic-bin
+
     echo "Migration the database"
     aerich migrate
     aerich upgrade
@@ -25,6 +28,9 @@ if exist venv/ (
 
     echo "Installing dependencies"
     pip install -r requirements.txt
+
+    echo "Installing magiclib"
+    pip install python-magic-bin
 
     echo "Migration the database"
     aerich init -t database.init.TORTOISE_ORM
