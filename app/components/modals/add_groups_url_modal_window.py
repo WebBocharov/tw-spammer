@@ -44,6 +44,7 @@ class AddGroupsUrlModalView(ft.AlertDialog):
                 wrap=True
             ),
             ft.TextField(
+                label="Проксі",
                 hint_text="Проксі. Формат: http://host:port@username:password",
                 value=self.browser.proxy or "",
                 border_color=ft.colors.WHITE,
