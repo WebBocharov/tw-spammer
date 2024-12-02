@@ -40,7 +40,8 @@ class BrowserProfileController:
 
     @staticmethod
     async def filter_browser_profiles(field_filter_by: str, value: str) -> list[BrowserProfile]:
-        return await BrowserProfile.filter(**{f"{field_filter_by}__icontains": value}).all().prefetch_related('twitter_group_urls')
+        return await BrowserProfile.filter(**{f"{field_filter_by}__icontains": value}).all().prefetch_related(
+            'twitter_group_urls')
 
     @staticmethod
     async def get_browser_profiles_with_links() -> list[BrowserProfile]:
@@ -51,3 +52,7 @@ class BrowserProfileController:
     @staticmethod
     async def update_browser_profile_status(browser_id: str, status: bool):
         return await BrowserProfile.filter(id=browser_id).update(active=status)
+
+    @staticmethod
+    async def update_browser_proxy(browser_id: str, proxy: str):
+        return await BrowserProfile.filter(id=browser_id).update(proxy=proxy)
