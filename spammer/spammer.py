@@ -1,15 +1,14 @@
 import asyncio
-import random
 from dataclasses import asdict
 
 from loguru import logger
-from playwright.async_api import async_playwright, Error, Response
+from playwright.async_api import async_playwright, Error
 
 import config
 from apis import ADSPowerLocalAPI
 from apis.ads_power.dto import BrowserProfileConnectionDTO
 from app.components import LogField
-from database.controllers import ConfigController, TwitterGroupUrlController
+from database.controllers import ConfigController
 from utils import get_random_gif
 from .selectors import Selectors
 
@@ -102,10 +101,8 @@ class TwitterSpammer:
         await log_field.write(f"{browser_id}: Парсінг зупинено")
 
     @classmethod
-    async def get_page_source(cls, browser_data: BrowserProfileConnectionDTO):
+    async def get_cookies(cls, browser_data: BrowserProfileConnectionDTO) -> str:
         self = cls()
         page, _ = await self._init_playwright(browser_data)
-        await page.goto("https://x.com/messages", wait_until="domcontentloaded")
-        await page.wait_for_selector(Selectors.CHAT_LIST, state="visible", timeout=60000)
-        await page.wait_for_timeout(random.randint(10000, 20000))
-        return await page.content()
+        cookies = await page.context.cookies("https://x.com")
+        return "; ".join([f"{cookie.get('name')}={cookie.get('value')}" for cookie in cookies])
