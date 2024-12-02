@@ -1,5 +1,9 @@
-import flet as ft
+import re
 
+import flet as ft
+from loguru import logger
+
+import config
 from database.controllers import BrowserProfileController, TwitterGroupUrlController
 from database.models import BrowserProfile, TwitterGroupUrl
 
@@ -26,30 +30,36 @@ class AddGroupsUrlModalView(ft.AlertDialog):
                 hint_text="Кожне посилання з нового рядка",
                 on_focus=self.clear_error_text,
                 expand=True,
+                border_color=ft.colors.WHITE
             ),
             ft.Row(
                 [
                     ft.ElevatedButton("Скопіювати браузер id",
-                                      on_click=lambda e: self.page.set_clipboard(self.browser.browser_id)),
+                                      on_click=lambda e: self.page.set_clipboard(f"{self.browser.browser_id}")),
                     ft.ElevatedButton("Скопіювати браузер name",
-                                      on_click=lambda e: self.page.set_clipboard(self.browser.name)),
+                                      on_click=lambda e: self.page.set_clipboard(f"{self.browser.name}")),
                     ft.ElevatedButton("Скопіювати браузер number",
-                                      on_click=lambda e: self.page.set_clipboard(self.browser.serial_number)),
+                                      on_click=lambda e: self.page.set_clipboard(f"{self.browser.serial_number}")),
                 ],
                 wrap=True
             ),
+            ft.TextField(
+                hint_text="Проксі. Формат: http://host:port@username:password",
+                value=self.browser.proxy or "",
+                border_color=ft.colors.WHITE,
+            )
         ],
             width=400,
             expand=True
         )
         self.expand = True
         self.actions = [
-            ft.TextButton("Зберегти", on_click=self.save_links),
+            ft.TextButton("Зберегти", on_click=self.save_changes),
             ft.TextButton("Видалити", on_click=self.delete_browser, style=ft.ButtonStyle(color=ft.colors.RED)),
             ft.TextButton("Закрити", on_click=lambda e: self.page.close(self)),
         ]
 
-    async def save_links(self, _: ft.ControlEvent):
+    async def save_changes(self, _: ft.ControlEvent):
         textfile: ft.TextField = self.content.controls[1]
         urls_list = textfile.value.strip().split("\n")
         filtered_urls = list(filter(None, urls_list))
@@ -63,6 +73,12 @@ class AddGroupsUrlModalView(ft.AlertDialog):
         else:
             textfile.error_text = "Поле не може бути порожнім"
             textfile.update()
+
+        proxy_field: ft.TextField = self.content.controls[-1]
+        if proxy_field.value:
+            proxy = re.compile(config.PROXY_REGEX).match(proxy_field.value)
+            if proxy:
+                await BrowserProfileController.update_browser_proxy(self.browser.id, proxy.group())
 
     async def delete_browser(self, _: ft.ControlEvent):
         await BrowserProfileController.delete_browser_profile(self.browser.id)
