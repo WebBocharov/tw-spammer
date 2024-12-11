@@ -27,7 +27,7 @@ class AddGroupsUrlModalView(ft.AlertDialog):
                 min_lines=1,
                 label="Список посилань на групи",
                 hint_text="Кожне посилання з нового рядка",
-                on_focus=self.clear_error_text,
+                on_focus=self.clear_helping_text_group_list,
                 expand=True,
                 border_color=ft.colors.WHITE
             ),
@@ -47,6 +47,7 @@ class AddGroupsUrlModalView(ft.AlertDialog):
                 hint_text="Проксі. Формат: http://host:port@username:password",
                 value=self.browser.proxy or "",
                 border_color=ft.colors.WHITE,
+                on_focus=self.clear_helping_text_proxy
             )
         ],
             width=400,
@@ -61,6 +62,7 @@ class AddGroupsUrlModalView(ft.AlertDialog):
 
     async def save_changes(self, _: ft.ControlEvent):
         textfile: ft.TextField = self.content.controls[1]
+        proxy_field: ft.TextField = self.content.controls[-1]
         urls_list = textfile.value.strip().split("\n")
         filtered_urls = list(filter(None, urls_list))
 
@@ -69,16 +71,24 @@ class AddGroupsUrlModalView(ft.AlertDialog):
                 TwitterGroupUrl(url=group_url, browser_profile_id=self.browser.id)
                 for group_url in filtered_urls
             ])
-            self.page.close(self)
+            textfile.helper_text = "Список збережено"
+            textfile.helper_style = ft.TextStyle(color=ft.colors.GREEN)
+            textfile.border_color = ft.colors.GREEN
         else:
-            textfile.error_text = "Поле не може бути порожнім"
-            textfile.update()
+            textfile.error_text = "Список не був оновленний, бо він порожній"
 
-        proxy_field: ft.TextField = self.content.controls[-1]
         if proxy_field.value:
             proxy = re.compile(config.PROXY_REGEX).match(proxy_field.value)
             if proxy:
+                proxy_field.helper_text = "Проксі збережено"
+                proxy_field.helper_style = ft.TextStyle(color=ft.colors.GREEN)
+                proxy_field.border_color = ft.colors.GREEN
                 await BrowserProfileController.update_browser_proxy(self.browser.id, proxy.group())
+            else:
+                proxy_field.error_text = "Невірний формат проксі. Приклад: http://host:port@username:password"
+
+        textfile.update()
+        proxy_field.update()
 
     async def delete_browser(self, _: ft.ControlEvent):
         await BrowserProfileController.delete_browser_profile(self.browser.id)
@@ -89,6 +99,16 @@ class AddGroupsUrlModalView(ft.AlertDialog):
         await BrowserProfileController.update_browser_profile_status(self.browser.id, event.control.value)
         event.control.update()
 
-    async def clear_error_text(self, event: ft.ControlEvent):
+    @staticmethod
+    async def clear_helping_text_group_list(event: ft.ControlEvent):
         event.control.error_text = ""
+        event.control.helper_text = ""
+        event.control.border_color = ft.colors.WHITE
+        event.control.update()
+
+    @staticmethod
+    async def clear_helping_text_proxy(event: ft.ControlEvent):
+        event.control.error_text = ""
+        event.control.helper_text = ""
+        event.control.border_color = ft.colors.WHITE
         event.control.update()
