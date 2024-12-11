@@ -43,7 +43,7 @@ class UpdateLinksPopUpMenu(ft.PopupMenuItem):
 
         conversations = [
             f"https://x.com/messages/{group.id}"
-            for group in await app.get_inbox(pages=100) if len(group.participants) >= 50 and group.trusted
+            for group in await app.get_inbox(pages=200) if len(group.participants) >= 50 and group.trusted
         ]
         await TwitterGroupUrlController.batch_create_by_browser_id(conversations, browser_id)
         await self.logging_field.write(f"Отримано {len(conversations)} груп для браузера {browser_id}")
